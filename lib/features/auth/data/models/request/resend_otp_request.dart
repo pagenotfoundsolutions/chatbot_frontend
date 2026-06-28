@@ -5,6 +5,7 @@ part 'resend_otp_request.g.dart';
 
 @freezed
 abstract class ResendOtpRequest with _$ResendOtpRequest {
+  const ResendOtpRequest._();
   const factory ResendOtpRequest({
     required String email,
   }) = _ResendOtpRequest;

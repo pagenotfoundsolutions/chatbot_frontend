@@ -8,14 +8,21 @@ import '../network/dio_client.dart';
 import '../storage/local_storage.dart';
 import '../storage/shared_prefs_storage.dart';
 import '../theme/cubit/theme_cubit.dart';
+import '../../features/auth/auth_injection.dart' hide sl;
+import '../../features/profile/profile_injection.dart' hide sl;
+import '../../features/chat/chat_injection.dart' hide sl;
+import '../../features/files/files_injection.dart';
+import '../../features/ai_models/ai_models_injection.dart' hide sl;
 
 final sl = GetIt.instance; // sl stands for Service Locator
 
 Future<void> init() async {
-  // Features - Auth (Deferred Loading via app_router)
-
-  // Features - Chat
-  // Features - Profile
+  // Features
+  initAuth();
+  initProfile();
+  initChat();
+  setupFilesInjection();
+  initAiModels();
 
   // Core
   sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(sl()));
@@ -34,5 +41,5 @@ Future<void> init() async {
   sl.registerLazySingleton(() => InternetConnection());
 
   // State Management
-  sl.registerFactory(() => ThemeCubit(sl()));
+  sl.registerLazySingleton(() => ThemeCubit(sl()));
 }

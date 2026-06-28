@@ -6,9 +6,15 @@ part 'profile_state.freezed.dart';
 
 @freezed
 abstract class ProfileState with _$ProfileState {
+  const ProfileState._();
+
   const factory ProfileState({
     @Default(LoadState.idle()) LoadState<Profile> profileStatus,
     @Default(LoadState.idle()) LoadState<Profile> createStatus,
     @Default(LoadState.idle()) LoadState<Profile> updateStatus,
   }) = _ProfileState;
+
+  bool get hasProfile => profileStatus.isSuccess && profileStatus.data != null;
+
+  Profile? get profile => profileStatus.data;
 }

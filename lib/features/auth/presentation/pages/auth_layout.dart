@@ -155,10 +155,14 @@ class AuthLayout extends StatelessWidget {
               listenWhen: (p, c) => p.authStatus != c.authStatus,
               listener: (context, state) {
                 state.authStatus.maybeWhen(
-                  error: (msg, _) => _showError(context, msg),
+                  error: (msg, _) {
+                    _showError(context, msg);
+                    if (msg.toLowerCase().contains('not verified')) {
+                      context.go('/auth/verify-otp');
+                    }
+                  },
                   success: (msg, _) {
                     _showSuccess(context, msg);
-                    context.go('/profile-check');
                   },
                   orElse: () {},
                 );

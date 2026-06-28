@@ -28,7 +28,7 @@ void initProfile() {
     sl.registerLazySingleton(() => UpdateProfileUseCase(sl()));
 
     // Bloc
-    sl.registerFactory(
+    sl.registerLazySingleton(
       () => ProfileBloc(
         getProfileUseCase: sl(),
         createProfileUseCase: sl(),

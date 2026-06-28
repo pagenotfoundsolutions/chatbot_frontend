@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-
 import '../bloc/profile_bloc.dart';
 import '../bloc/profile_event.dart';
-import '../bloc/profile_state.dart';
-import '../../domain/entities/profile.dart';
-import '../../../../core/utils/loading_state.dart';
+import '../../../../core/widgets/app_loader.dart';
 
 class ProfileCheckLayout extends StatefulWidget {
   final Widget child;
@@ -26,26 +22,7 @@ class _ProfileCheckLayoutState extends State<ProfileCheckLayout> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<ProfileBloc, ProfileState>(
-      listenWhen: (p, c) => p.profileStatus != c.profileStatus,
-      listener: (context, state) {
-        state.profileStatus.maybeWhen(
-          error: (msg, _) {
-            if (msg == 'Profile not found') {
-              context.go('/create-profile');
-            }
-          },
-          success: (msg, _) {
-            // If we are currently on the checking route, redirect to home
-            if (GoRouterState.of(context).uri.toString() == '/profile-check') {
-              context.go('/home'); // Or chat screen
-            }
-          },
-          orElse: () {},
-        );
-      },
-      child: widget.child,
-    );
+    return widget.child;
   }
 }
 
@@ -54,9 +31,23 @@ class ProfileCheckScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    final theme = Theme.of(context);
+
+    return Scaffold(
       body: Center(
-        child: CircularProgressIndicator(),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const AppCircleLoader(size: 40),
+            const SizedBox(height: 20),
+            Text(
+              'Setting things up...',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

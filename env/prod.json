@@ -1,5 +1,5 @@
 {
-  "API_URL": "https://chatbot.pagenotfoundsolutions.cloud",
+  "API_URL": "https://chatbot-bk.pagenotfoundsolutions.cloud/api",
   "ENV": "prod",
   "ENABLE_AUTH": true,
   "ENABLE_CHAT": true,

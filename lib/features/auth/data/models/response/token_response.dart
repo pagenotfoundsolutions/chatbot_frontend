@@ -6,8 +6,8 @@ part 'token_response.g.dart';
 @freezed
 abstract class TokenResponse with _$TokenResponse {
   const factory TokenResponse({
-    @JsonKey(name: 'access_token') required String accessToken,
-    @JsonKey(name: 'refresh_token') required String refreshToken,
+    @JsonKey(name: 'access_token') @Default('') String accessToken,
+    @JsonKey(name: 'refresh_token') @Default('') String refreshToken,
     @JsonKey(name: 'token_type') @Default('Bearer') String tokenType,
   }) = _TokenResponse;
 

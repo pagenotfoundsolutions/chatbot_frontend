@@ -12,6 +12,7 @@ import '../models/request/login_request.dart';
 import '../models/request/register_request.dart';
 import '../models/request/verify_otp_request.dart';
 import '../models/request/resend_otp_request.dart';
+import '../models/request/logout_request.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthApiClient apiClient;
@@ -30,7 +31,9 @@ class AuthRepositoryImpl implements AuthRepository {
       final response = await apiClient.login(LoginRequest(email: email, password: password));
       if (response.success && response.data != null) {
         final token = response.data!.accessToken;
+        final refreshToken = response.data!.refreshToken;
         await localStorage.saveString(AppConstants.accessTokenKey, token);
+        await localStorage.saveString(AppConstants.refreshTokenKey, refreshToken);
         return UserModel(
           id: '',
           email: email,
@@ -124,8 +127,31 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> logout() async {
     return safeApiCall(() async {
+      final refreshToken = localStorage.getString(AppConstants.refreshTokenKey);
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        try {
+          await apiClient.logout(LogoutRequest(refreshToken: refreshToken));
+        } catch (_) {
+          // Ignore API error on logout to ensure local state is cleared
+        }
+      }
       await googleAuthRemoteDataSource.googleSignOut();
       await localStorage.clear();
     });
+  }
+
+  @override
+  Future<Either<Failure, User>> checkAuthStatus() async {
+    try {
+      final token = localStorage.getString(AppConstants.accessTokenKey);
+      if (token != null && token.isNotEmpty) {
+        // Return a basic user instance based on token existence
+        return Right(UserModel(id: '', email: '', name: '', token: token));
+      } else {
+        return const Left(ServerFailure('No token found'));
+      }
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
   }
 }

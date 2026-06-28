@@ -1,5 +1,5 @@
 {
-  "API_URL": "https://chatbot.pagenotfoundsolutions.cloud",
+  "API_URL": "http://localhost:18100/api",
   "ENV": "dev",
   "ENABLE_AUTH": true,
   "ENABLE_CHAT": true,

@@ -15,6 +15,12 @@ class RegisterUseCase implements UseCase<void, RegisterParams> {
 
   @override
   Future<Either<Failure, void>> call(RegisterParams params) {
+    if (params.email.trim().isEmpty || !params.email.contains('@')) {
+      return Future.value(const Left(ValidationFailure('Please enter a valid email address')));
+    }
+    if (params.password.length < 8) {
+      return Future.value(const Left(ValidationFailure('Password must be at least 8 characters long')));
+    }
     return repository.register(params.email, params.password);
   }
 }

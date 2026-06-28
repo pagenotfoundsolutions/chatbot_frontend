@@ -1,5 +1,4 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/usecase/usecase.dart';
 import '../../../../core/utils/loading_state.dart';
 import '../../domain/usecases/get_profile_usecase.dart';
 import '../../domain/usecases/create_profile_usecase.dart';
@@ -20,20 +19,18 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     on<GetProfileRequested>(_onGetProfileRequested);
     on<CreateProfileRequested>(_onCreateProfileRequested);
     on<UpdateProfileRequested>(_onUpdateProfileRequested);
+    on<ResetProfileRequested>(_onResetProfileRequested);
+  }
+
+  void _onResetProfileRequested(ResetProfileRequested event, Emitter<ProfileState> emit) {
+    emit(const ProfileState());
   }
 
   Future<void> _onGetProfileRequested(GetProfileRequested event, Emitter<ProfileState> emit) async {
-    emit(state.copyWith(profileStatus: const LoadState.loading()));
-    final result = await getProfileUseCase(const NoParams());
+    emit(state.copyWith(profileStatus: LoadState.loading(state.profileStatus.data)));
+    final result = await getProfileUseCase();
     result.fold(
-      (failure) {
-        if (failure.message == 'Profile not found') {
-          // Special state for empty profile
-          emit(state.copyWith(profileStatus: LoadState.error(failure.message)));
-        } else {
-          emit(state.copyWith(profileStatus: LoadState.error(failure.message)));
-        }
-      },
+      (failure) => emit(state.copyWith(profileStatus: LoadState.error(failure.message))),
       (profile) => emit(state.copyWith(profileStatus: LoadState.success('Profile loaded', profile))),
     );
   }

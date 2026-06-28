@@ -4,12 +4,12 @@ import '../../../../core/usecase/usecase.dart';
 import '../entities/profile.dart';
 import '../repositories/profile_repository.dart';
 
-class GetProfileUseCase implements UseCase<Profile, NoParams> {
+class GetProfileUseCase implements UseCaseNoParams<Profile> {
   final ProfileRepository repository;
   GetProfileUseCase(this.repository);
 
   @override
-  Future<Either<Failure, Profile>> call(NoParams params) {
+  Future<Either<Failure, Profile>> call() {
     return repository.getProfile();
   }
 }

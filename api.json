@@ -1463,6 +1463,28 @@
                     }
                 }
             }
+        },
+        "/tools": {
+            "get": {
+                "tags": [
+                    "Tools"
+                ],
+                "summary": "List Tools",
+                "description": "Returns a list of all active tools available to the AI agent.",
+                "operationId": "list_tools_tools_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResp_list_dict__"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -2010,17 +2032,17 @@
                     "default_top_p": {
                         "type": "number",
                         "title": "Default Top P",
-                        "default": 1
+                        "default": 1.0
                     },
                     "default_frequency_penalty": {
                         "type": "number",
                         "title": "Default Frequency Penalty",
-                        "default": 0
+                        "default": 0.0
                     },
                     "default_presence_penalty": {
                         "type": "number",
                         "title": "Default Presence Penalty",
-                        "default": 0
+                        "default": 0.0
                     },
                     "supports_tools": {
                         "type": "boolean",
@@ -2140,17 +2162,17 @@
                     "input_price_per_million": {
                         "type": "number",
                         "title": "Input Price Per Million",
-                        "default": 0
+                        "default": 0.0
                     },
                     "output_price_per_million": {
                         "type": "number",
                         "title": "Output Price Per Million",
-                        "default": 0
+                        "default": 0.0
                     },
                     "cache_price_per_million": {
                         "type": "number",
                         "title": "Cache Price Per Million",
-                        "default": 0
+                        "default": 0.0
                     },
                     "priority": {
                         "type": "integer",
@@ -2666,6 +2688,17 @@
                     "email": {
                         "type": "string",
                         "title": "Email"
+                    },
+                    "otp_code": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Otp Code"
                     }
                 },
                 "type": "object",
@@ -2711,6 +2744,19 @@
                         "title": "Thinking Enabled",
                         "description": "Enable reasoning/thinking tokens for models that support it",
                         "default": false
+                    },
+                    "file_id": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "File Id",
+                        "description": "Optional ID of the document to use for RAG search"
                     }
                 },
                 "type": "object",
@@ -2733,6 +2779,17 @@
                     },
                     "assistant_message": {
                         "$ref": "#/components/schemas/MessageResponse"
+                    },
+                    "reasoning": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Reasoning"
                     }
                 },
                 "type": "object",
@@ -3226,6 +3283,43 @@
                     "message"
                 ],
                 "title": "SuccessResp[dict]"
+            },
+            "SuccessResp_list_dict__": {
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "title": "Success",
+                        "default": true
+                    },
+                    "message": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "data": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "additionalProperties": true,
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Data"
+                    },
+                    "error": {
+                        "type": "null",
+                        "title": "Error"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "message"
+                ],
+                "title": "SuccessResp[list[dict]]"
             },
             "TokenResponse": {
                 "properties": {
@@ -3911,7 +4005,7 @@
                     "otp_code": {
                         "type": "string",
                         "title": "Otp Code",
-                        "description": "The 6-digit OTP code"
+                        "description": "The 4-digit OTP code"
                     }
                 },
                 "type": "object",

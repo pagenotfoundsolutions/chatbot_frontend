@@ -5,6 +5,7 @@ part 'register_request.g.dart';
 
 @freezed
 abstract class RegisterRequest with _$RegisterRequest {
+  const RegisterRequest._();
   const factory RegisterRequest({
     required String email,
     required String password,

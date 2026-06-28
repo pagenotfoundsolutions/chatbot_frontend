@@ -11,6 +11,30 @@
       ]
     },
     {
+      "name": "Chatbot Frontend Web (Port 3000)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "-d",
+        "chrome",
+        "--web-port=3000",
+        "--dart-define-from-file=env/dev.json"
+      ]
+    },
+    {
+      "name": "Chatbot Frontend Web (Port 3001)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "-d",
+        "chrome",
+        "--web-port=3001",
+        "--dart-define-from-file=env/dev.json"
+      ]
+    },
+    {
       "name": "Chatbot Frontend (Profile)",
       "request": "launch",
       "type": "dart",

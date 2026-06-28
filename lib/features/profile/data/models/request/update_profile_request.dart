@@ -5,8 +5,9 @@ part 'update_profile_request.g.dart';
 
 @freezed
 abstract class UpdateProfileRequest with _$UpdateProfileRequest {
+  const UpdateProfileRequest._();
   const factory UpdateProfileRequest({
-    required String name,
+    String? name,
     @JsonKey(name: 'profile_image_url') String? profileImageUrl,
     String? dob,
   }) = _UpdateProfileRequest;

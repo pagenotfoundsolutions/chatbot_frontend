@@ -9,12 +9,10 @@ import 'core/theme/cubit/theme_cubit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  usePathUrlStrategy();
 
   // Initialize dependency injection
   await di.init();
-
-  // Use path URL strategy for web (removes # from URLs)
-  usePathUrlStrategy();
 
   runApp(const ChatBotApp());
 }

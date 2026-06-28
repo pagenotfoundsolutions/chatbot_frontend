@@ -17,4 +17,6 @@ class ProfileEvent with _$ProfileEvent {
     String? profileImageUrl,
     String? dob,
   }) = UpdateProfileRequested;
+
+  const factory ProfileEvent.resetProfileRequested() = ResetProfileRequested;
 }

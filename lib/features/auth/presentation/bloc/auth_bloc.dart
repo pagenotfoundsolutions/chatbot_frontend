@@ -6,8 +6,10 @@ import '../../domain/usecases/verify_otp_usecase.dart';
 import '../../domain/usecases/resend_otp_usecase.dart';
 import '../../domain/usecases/google_sign_in_usecase.dart';
 import '../../domain/usecases/logout_usecase.dart';
+import '../../domain/usecases/check_auth_status_usecase.dart';
 import '../../domain/usecases/request_password_reset_usecase.dart';
 import '../../domain/usecases/reset_password_usecase.dart';
+import '../../../../core/usecase/usecase.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 
@@ -21,6 +23,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final RequestPasswordResetUseCase requestPasswordResetUseCase;
   final ResetPasswordUseCase resetPasswordUseCase;
 
+  final CheckAuthStatusUseCase checkAuthStatusUseCase;
+
   AuthBloc({
     required this.loginUseCase,
     required this.registerUseCase,
@@ -28,6 +32,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required this.resendOtpUseCase,
     required this.googleSignInUseCase,
     required this.logoutUseCase,
+    required this.checkAuthStatusUseCase,
     required this.requestPasswordResetUseCase,
     required this.resetPasswordUseCase,
   }) : super(const AuthState()) {
@@ -39,13 +44,34 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<ResetPasswordRequested>(_onResetPasswordRequested);
     on<GoogleSignInRequested>(_onGoogleSignInRequested);
     on<LogoutRequested>(_onLogoutRequested);
+    on<CheckAuthStatus>(_onCheckAuthStatus);
+  }
+
+  Future<void> _onCheckAuthStatus(CheckAuthStatus event, Emitter<AuthState> emit) async {
+    emit(state.copyWith(authStatus: const LoadState.loading()));
+    final result = await checkAuthStatusUseCase(const NoParams());
+    result.fold(
+      (failure) => emit(state.copyWith(authStatus: LoadState.error(failure.message))),
+      (user) => emit(state.copyWith(authStatus: LoadState.success('Login restored', user))),
+    );
   }
 
   Future<void> _onLoginRequested(LoginRequested event, Emitter<AuthState> emit) async {
     emit(state.copyWith(authStatus: const LoadState.loading()));
     final result = await loginUseCase(LoginParams(email: event.email, password: event.password));
     result.fold(
-      (failure) => emit(state.copyWith(authStatus: LoadState.error(failure.message))),
+      (failure) {
+        if (failure.message.toLowerCase().contains('not verified') ||
+            failure.message.toLowerCase().contains('authusernotverifiedexception')) {
+          emit(state.copyWith(
+            authStatus: LoadState.error(failure.message),
+            registeredEmail: event.email,
+          ));
+          add(ResendOtpRequested(event.email));
+        } else {
+          emit(state.copyWith(authStatus: LoadState.error(failure.message)));
+        }
+      },
       (user) => emit(state.copyWith(authStatus: LoadState.success('Login successful', user))),
     );
   }
@@ -92,9 +118,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Future<void> _onLogoutRequested(LogoutRequested event, Emitter<AuthState> emit) async {
-    // Reset to initial state
-    emit(const AuthState());
     await logoutUseCase();
+    // Reset to initial state after clearing tokens
+    emit(const AuthState());
   }
 
   Future<void> _onForgotPasswordRequested(ForgotPasswordRequested event, Emitter<AuthState> emit) async {

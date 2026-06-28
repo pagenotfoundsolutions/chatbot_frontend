@@ -23,7 +23,7 @@ class _OtpPageState extends State<OtpPage> {
   void initState() {
     super.initState();
     final registeredEmail = context.read<AuthBloc>().state.registeredEmail;
-    if (registeredEmail != null) {
+    if (registeredEmail != null && registeredEmail.isNotEmpty) {
       _emailController.text = registeredEmail;
     }
   }

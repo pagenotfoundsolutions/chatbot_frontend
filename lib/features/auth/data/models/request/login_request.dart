@@ -5,6 +5,7 @@ part 'login_request.g.dart';
 
 @freezed
 abstract class LoginRequest with _$LoginRequest {
+  const LoginRequest._();
   const factory LoginRequest({
     required String email,
     required String password,

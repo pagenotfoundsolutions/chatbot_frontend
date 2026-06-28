@@ -5,6 +5,9 @@ import '../../constants/api_constants.dart';
 import '../../config/env_config.dart';
 import '../../storage/local_storage.dart';
 
+import 'package:go_router/go_router.dart';
+import '../../router/app_router.dart';
+
 class AuthInterceptor extends Interceptor {
   final LocalStorage _localStorage;
   final Dio _dio; // The main Dio instance for retrying requests
@@ -70,18 +73,21 @@ class AuthInterceptor extends Interceptor {
         );
 
         if (response.statusCode == 200 || response.statusCode == 201) {
-          final newAccessToken = response.data['access_token'];
-          final newRefreshToken = response.data['refresh_token']; // Optional based on backend
+          final responseData = response.data['data'] as Map<String, dynamic>?;
+          if (responseData != null) {
+            final newAccessToken = responseData['access_token'] as String?;
+            final newRefreshToken = responseData['refresh_token'] as String?;
 
-          if (newAccessToken != null) {
-            await _localStorage.saveString(AppConstants.accessTokenKey, newAccessToken);
-            if (newRefreshToken != null) {
-              await _localStorage.saveString(AppConstants.refreshTokenKey, newRefreshToken);
+            if (newAccessToken != null) {
+              await _localStorage.saveString(AppConstants.accessTokenKey, newAccessToken);
+              if (newRefreshToken != null && newRefreshToken.isNotEmpty) {
+                await _localStorage.saveString(AppConstants.refreshTokenKey, newRefreshToken);
+              }
+
+              _isRefreshing = false;
+              _refreshTokenCompleter?.complete(true);
+              return _retryOriginalRequest(err.requestOptions, handler);
             }
-
-            _isRefreshing = false;
-            _refreshTokenCompleter?.complete(true);
-            return _retryOriginalRequest(err.requestOptions, handler);
           }
         }
         
@@ -133,7 +139,15 @@ class AuthInterceptor extends Interceptor {
   Future<void> _performLogout() async {
     // Clear all storage on unauthorized terminal failure
     await _localStorage.clear();
-    // TODO: Dispatch a global logout event (e.g. via Stream or NavigationKey) 
-    // to kick the user to the Login screen.
+    
+    // Dispatch a global logout event via rootNavigatorKey
+    // Must be called synchronously to avoid build context warning,
+    // but rootNavigatorKey is a GlobalKey, so context access is fine,
+    // we can wrap it in Future.microtask or check if mounted.
+    // However, GoRouter's context is safe to access this way from a GlobalKey.
+    final context = rootNavigatorKey.currentContext;
+    if (context != null && context.mounted) {
+      context.go('/auth/login');
+    }
   }
 }

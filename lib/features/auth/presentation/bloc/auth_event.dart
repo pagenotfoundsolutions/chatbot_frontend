@@ -12,4 +12,5 @@ class AuthEvent with _$AuthEvent {
   const factory AuthEvent.resetPasswordRequested(String email, String otp, String newPassword) = ResetPasswordRequested;
   const factory AuthEvent.googleSignInRequested() = GoogleSignInRequested;
   const factory AuthEvent.logoutRequested() = LogoutRequested;
+  const factory AuthEvent.checkAuthStatus() = CheckAuthStatus;
 }
