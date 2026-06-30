@@ -180,6 +180,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     String accumulatedText = '';
     DateTime lastEmitTime = DateTime.fromMillisecondsSinceEpoch(0); // Force first token to always emit
     bool hasEmittedFirstToken = false;
+    bool hasStartedThinking = false;
+    bool hasFinishedThinking = false;
 
     // Helper: build an updated messages list with the assistant message content replaced
     List<Message> _updateAssistantMessage(String newContent) {
@@ -204,9 +206,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           (streamEvent) {
             return switch (streamEvent) {
               ChatStreamEventToken(:final content) => () {
+                if (hasStartedThinking && !hasFinishedThinking) {
+                  accumulatedText += '\n```\n\n';
+                  hasFinishedThinking = true;
+                }
                 accumulatedText += content;
                 final now = DateTime.now();
-                // First token ALWAYS emits immediately, then throttle at 30ms
                 if (!hasEmittedFirstToken || now.difference(lastEmitTime).inMilliseconds >= 30) {
                   lastEmitTime = now;
                   hasEmittedFirstToken = true;
@@ -216,8 +221,20 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
                 }
                 return state;
               }(),
-              ChatStreamEventThinking() => () {
-                // Ignore thinking chunks or append differently if needed
+              ChatStreamEventThinking(:final content) => () {
+                if (!hasStartedThinking) {
+                  accumulatedText += '```thinking\n';
+                  hasStartedThinking = true;
+                }
+                accumulatedText += content;
+                final now = DateTime.now();
+                if (!hasEmittedFirstToken || now.difference(lastEmitTime).inMilliseconds >= 30) {
+                  lastEmitTime = now;
+                  hasEmittedFirstToken = true;
+                  return state.copyWith(
+                    messages: _updateAssistantMessage(accumulatedText + (hasFinishedThinking ? '' : '\n```')),
+                  );
+                }
                 return state;
               }(),
               ChatStreamEventDone() => () {
