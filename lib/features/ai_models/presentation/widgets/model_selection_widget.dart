@@ -32,6 +32,7 @@ class _ModelSelectionWidgetState extends State<ModelSelectionWidget> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (modalContext) {
         return BlocBuilder<AiProvidersBloc, AiProvidersState>(
           bloc: bloc,
@@ -48,37 +49,49 @@ class _ModelSelectionWidgetState extends State<ModelSelectionWidget> {
             );
             final currentModels = currentProvider.models;
 
-            return Container(
-              padding: EdgeInsets.all(24.r),
-              decoration: BoxDecoration(
-                color: theme.scaffoldBackgroundColor,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(24.r),
-                  topRight: Radius.circular(24.r),
+            return SafeArea(
+              child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.9,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, -5),
-                  )
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40.w,
-                      height: 4.h,
-                      decoration: BoxDecoration(
-                        color: theme.dividerColor.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(4.r),
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(24.r),
+                    topRight: Radius.circular(24.r),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 20,
+                      offset: const Offset(0, -5),
+                    )
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.only(top: 24.r, bottom: 24.h),
+                      child: Center(
+                        child: Container(
+                          width: 40.w,
+                          height: 4.h,
+                          decoration: BoxDecoration(
+                            color: theme.dividerColor.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(4.r),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                  SizedBox(height: 24.h),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.only(left: 24.r, right: 24.r, bottom: 24.r),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+
                   Text(
                     'Select AI Provider',
                     style: theme.textTheme.titleMedium?.copyWith(
@@ -237,7 +250,12 @@ class _ModelSelectionWidgetState extends State<ModelSelectionWidget> {
                     ),
                   if (currentModels.any((m) => m.id == selectedModelId && m.capabilities.contains(ModelCapability.reasoning)))
                     SizedBox(height: 24.h),
-                ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },
