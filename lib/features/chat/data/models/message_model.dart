@@ -10,6 +10,7 @@ abstract class MessageModel with _$MessageModel {
     @Default('') String id,
     @Default(MessageRole.user) MessageRole role,
     @Default('') String content,
+    @JsonKey(name: 'thinking_content') String? thinkingContent,
     @JsonKey(name: 'created_at') DateTime? createdAt,
   }) = _MessageModel;
 

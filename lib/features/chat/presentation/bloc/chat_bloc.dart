@@ -178,17 +178,20 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     );
 
     String accumulatedText = '';
+    String accumulatedThinkingText = '';
     DateTime lastEmitTime = DateTime.fromMillisecondsSinceEpoch(0); // Force first token to always emit
     bool hasEmittedFirstToken = false;
     bool hasStartedThinking = false;
-    bool hasFinishedThinking = false;
 
     // Helper: build an updated messages list with the assistant message content replaced
-    List<Message> _updateAssistantMessage(String newContent) {
+    List<Message> _updateAssistantMessage(String newContent, {String? newThinkingContent}) {
       final idx = state.messages.indexWhere((m) => m.id == tempAssistantMessageId);
       if (idx == -1) return state.messages;
       final updated = List<Message>.of(state.messages);
-      updated[idx] = updated[idx].copyWith(content: newContent);
+      updated[idx] = updated[idx].copyWith(
+        content: newContent,
+        thinkingContent: newThinkingContent ?? updated[idx].thinkingContent,
+      );
       return updated;
     }
 
@@ -206,33 +209,26 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           (streamEvent) {
             return switch (streamEvent) {
               ChatStreamEventToken(:final content) => () {
-                if (hasStartedThinking && !hasFinishedThinking) {
-                  accumulatedText += '\n```\n\n';
-                  hasFinishedThinking = true;
-                }
                 accumulatedText += content;
                 final now = DateTime.now();
                 if (!hasEmittedFirstToken || now.difference(lastEmitTime).inMilliseconds >= 30) {
                   lastEmitTime = now;
                   hasEmittedFirstToken = true;
                   return state.copyWith(
-                    messages: _updateAssistantMessage(accumulatedText),
+                    messages: _updateAssistantMessage(accumulatedText, newThinkingContent: accumulatedThinkingText.isNotEmpty ? accumulatedThinkingText : null),
                   );
                 }
                 return state;
               }(),
               ChatStreamEventThinking(:final content) => () {
-                if (!hasStartedThinking) {
-                  accumulatedText += '```thinking\n';
-                  hasStartedThinking = true;
-                }
-                accumulatedText += content;
+                hasStartedThinking = true;
+                accumulatedThinkingText += content;
                 final now = DateTime.now();
                 if (!hasEmittedFirstToken || now.difference(lastEmitTime).inMilliseconds >= 30) {
                   lastEmitTime = now;
                   hasEmittedFirstToken = true;
                   return state.copyWith(
-                    messages: _updateAssistantMessage(accumulatedText + (hasFinishedThinking ? '' : '\n```')),
+                    messages: _updateAssistantMessage(accumulatedText, newThinkingContent: accumulatedThinkingText),
                   );
                 }
                 return state;
@@ -240,7 +236,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
               ChatStreamEventDone() => () {
                 return state.copyWith(
                   isSending: false,
-                  messages: _updateAssistantMessage(accumulatedText),
+                  messages: _updateAssistantMessage(accumulatedText, newThinkingContent: accumulatedThinkingText.isNotEmpty ? accumulatedThinkingText : null),
                 );
               }(),
               ChatStreamEventError(:final detail) => () {

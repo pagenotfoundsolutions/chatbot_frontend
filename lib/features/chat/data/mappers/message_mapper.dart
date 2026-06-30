@@ -7,6 +7,7 @@ extension MessageMapper on MessageModel {
       id: id,
       role: role,
       content: content,
+      thinkingContent: thinkingContent,
       createdAt: createdAt ?? DateTime.now(),
     );
   }
@@ -18,6 +19,7 @@ extension MessageEntityMapper on Message {
       id: id,
       role: role,
       content: content,
+      thinkingContent: thinkingContent,
       createdAt: createdAt,
     );
   }

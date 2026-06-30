@@ -10,7 +10,6 @@ abstract class SendMessageResultModel with _$SendMessageResultModel {
     @Default('') @JsonKey(name: 'conversation_id') String conversationId,
     @Default(MessageModel()) @JsonKey(name: 'user_message') MessageModel userMessage,
     @Default(MessageModel()) @JsonKey(name: 'assistant_message') MessageModel assistantMessage,
-    String? reasoning,
   }) = _SendMessageResultModel;
 
   factory SendMessageResultModel.fromJson(Map<String, dynamic> json) => _$SendMessageResultModelFromJson(json);

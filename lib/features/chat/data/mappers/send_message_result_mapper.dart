@@ -8,7 +8,6 @@ extension SendMessageResultMapper on SendMessageResultModel {
       conversationId: conversationId,
       userMessage: userMessage.toEntity(),
       assistantMessage: assistantMessage.toEntity(),
-      reasoning: reasoning,
     );
   }
 }
@@ -19,7 +18,6 @@ extension SendMessageResultEntityMapper on SendMessageResult {
       conversationId: conversationId,
       userMessage: userMessage.toModel(),
       assistantMessage: assistantMessage.toModel(),
-      reasoning: reasoning,
     );
   }
 }

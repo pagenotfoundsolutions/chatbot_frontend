@@ -154,47 +154,89 @@ class ChatBubble extends StatelessWidget {
     }
 
     // Assistant message
-    if (message.content.isEmpty) {
+    if (message.content.isEmpty && (message.thinkingContent == null || message.thinkingContent!.isEmpty)) {
       // Show animated typing dots instead of a blocking loader
       return const _TypingIndicator();
     }
 
-    // Render full Markdown (even during streaming as requested by user)
-    return MarkdownBody(
-      data: message.content,
-      selectable: true,
-      styleSheetTheme: MarkdownStyleSheetBaseTheme.material,
-      styleSheet: MarkdownStyleSheet(
-        p: theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.onSurface,
-          height: 1.5,
-        ),
-        code: theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.onSurface,
-          backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-          fontFamily: 'monospace',
-        ),
-        codeblockDecoration: BoxDecoration(
-          color: theme.brightness == Brightness.dark 
-              ? const Color(0xFF1E1E1E) 
-              : const Color(0xFFF5F5F5),
-          borderRadius: BorderRadius.circular(8.r),
-          border: Border.all(
-            color: theme.dividerColor.withValues(alpha: 0.5),
-          ),
-        ),
-        blockquote: theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-          fontStyle: FontStyle.italic,
-        ),
-        blockquoteDecoration: BoxDecoration(
-          border: Border(
-            left: BorderSide(
-              color: AppColors.primaryAccent,
-              width: 4.w,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (message.thinkingContent != null && message.thinkingContent!.isNotEmpty)
+          _buildThinkingContent(theme, message.thinkingContent!),
+        if (message.content.isNotEmpty)
+          MarkdownBody(
+            data: message.content,
+            selectable: true,
+            styleSheetTheme: MarkdownStyleSheetBaseTheme.material,
+            styleSheet: MarkdownStyleSheet(
+              p: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface,
+                height: 1.5,
+              ),
+              code: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface,
+                backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                fontFamily: 'monospace',
+              ),
+              codeblockDecoration: BoxDecoration(
+                color: theme.brightness == Brightness.dark 
+                    ? const Color(0xFF1E1E1E) 
+                    : const Color(0xFFF5F5F5),
+                borderRadius: BorderRadius.circular(8.r),
+                border: Border.all(
+                  color: theme.dividerColor.withValues(alpha: 0.5),
+                ),
+              ),
+              blockquote: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                fontStyle: FontStyle.italic,
+              ),
+              blockquoteDecoration: BoxDecoration(
+                border: Border(
+                  left: BorderSide(
+                    color: AppColors.primaryAccent,
+                    width: 4.w,
+                  ),
+                ),
+              ),
             ),
           ),
+      ],
+    );
+  }
+
+  Widget _buildThinkingContent(ThemeData theme, String thinkingContent) {
+    return Theme(
+      data: theme.copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        tilePadding: EdgeInsets.zero,
+        dense: true,
+        iconColor: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+        collapsedIconColor: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+        title: Text(
+          'Thinking process',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+            fontStyle: FontStyle.italic,
+          ),
         ),
+        children: [
+          Padding(
+            padding: EdgeInsets.only(bottom: 8.h),
+            child: MarkdownBody(
+              data: thinkingContent,
+              selectable: true,
+              styleSheetTheme: MarkdownStyleSheetBaseTheme.material,
+              styleSheet: MarkdownStyleSheet(
+                p: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

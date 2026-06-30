@@ -9,6 +9,7 @@ abstract class Message with _$Message {
     required String id,
     required MessageRole role,
     required String content,
+    String? thinkingContent,
     required DateTime createdAt,
   }) = _Message;
 }

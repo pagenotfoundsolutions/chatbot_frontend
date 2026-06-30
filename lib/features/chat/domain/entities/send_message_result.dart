@@ -9,6 +9,5 @@ abstract class SendMessageResult with _$SendMessageResult {
     required String conversationId,
     required Message userMessage,
     required Message assistantMessage,
-    String? reasoning,
   }) = _SendMessageResult;
 }
