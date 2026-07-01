@@ -21,6 +21,7 @@ import '../../features/ai_models/presentation/bloc/ai_providers_bloc.dart';
 import '../../features/chat/presentation/pages/chat_layout.dart';
 import '../../features/chat/presentation/pages/conversations_page.dart';
 import '../../features/files/presentation/bloc/files_bloc.dart';
+import '../../features/files/presentation/pages/files_page.dart';
 import 'router_refresh_stream.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey =
@@ -217,6 +218,10 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: '/chats',
           builder: (context, state) => const ConversationsPage(),
+        ),
+        GoRoute(
+          path: '/files',
+          builder: (context, state) => const FilesPage(showDrawerButton: true),
         ),
       ],
     ),

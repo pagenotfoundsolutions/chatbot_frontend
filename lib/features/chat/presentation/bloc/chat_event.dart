@@ -12,6 +12,7 @@ class ChatEvent with _$ChatEvent {
     required String providerId,
     required String modelId,
     @Default(false) bool thinkingEnabled,
+    String? fileId,
   }) = ChatEventSendMessageRequested;
   
   const factory ChatEvent.streamChunkReceived(String chunk) = ChatEventStreamChunkReceived;

@@ -8,6 +8,7 @@ extension MessageMapper on MessageModel {
       role: role,
       content: content,
       thinkingContent: thinkingContent,
+      fileId: fileId,
       createdAt: createdAt ?? DateTime.now(),
     );
   }
@@ -20,6 +21,7 @@ extension MessageEntityMapper on Message {
       role: role,
       content: content,
       thinkingContent: thinkingContent,
+      fileId: fileId,
       createdAt: createdAt,
     );
   }

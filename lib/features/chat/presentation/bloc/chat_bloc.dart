@@ -147,6 +147,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       id: tempUserMessageId,
       role: MessageRole.user,
       content: event.content,
+      fileId: event.fileId,
       createdAt: DateTime.now().toUtc(),
     );
 
@@ -173,6 +174,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         providerId: event.providerId,
         modelId: event.modelId,
         thinkingEnabled: event.thinkingEnabled,
+        fileId: event.fileId,
         cancelToken: _cancelToken,
       ),
     );

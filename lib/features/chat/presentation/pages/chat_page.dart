@@ -216,7 +216,7 @@ class _ChatPageState extends State<ChatPage> {
               builder: (context, state) {
                 return ChatInputBar(
                   isLoading: state.isSending,
-                  onSend: (text) {
+                  onSend: (text, fileId) {
                     final aiState = context.read<AiProvidersBloc>().state;
                     final providerId = aiState.selectedProviderId ?? '';
                     final modelId = aiState.selectedModelId ?? '';
@@ -227,6 +227,7 @@ class _ChatPageState extends State<ChatPage> {
                       providerId: providerId,
                       modelId: modelId,
                       thinkingEnabled: thinkingEnabled,
+                      fileId: fileId,
                     ));
                   },
                   onCancel: () {

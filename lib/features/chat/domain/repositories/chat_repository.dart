@@ -26,6 +26,7 @@ abstract class ChatRepository {
     required String content,
     required String providerId,
     required String modelId,
+    String? fileId,
   });
 
   Stream<Either<Failure, ChatStreamEvent>> streamMessage({
@@ -34,6 +35,7 @@ abstract class ChatRepository {
     required String providerId,
     required String modelId,
     bool thinkingEnabled = false,
+    String? fileId,
     CancelToken? cancelToken,
   });
 

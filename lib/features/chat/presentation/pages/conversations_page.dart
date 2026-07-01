@@ -138,8 +138,24 @@ class _ConversationsPageState extends State<ConversationsPage> {
         backgroundColor: Colors.transparent,
         actions: [
           IconButton(
+            icon: const Icon(Icons.folder_open),
+            tooltip: 'Knowledge Base',
+            onPressed: () {
+              if (widget.isSidebar && Scaffold.maybeOf(context)?.isDrawerOpen == true) {
+                Navigator.of(context).pop();
+              }
+              context.go('/files');
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.person_outline),
-            onPressed: () => context.go('/profile'),
+            tooltip: 'Profile',
+            onPressed: () {
+              if (widget.isSidebar && Scaffold.maybeOf(context)?.isDrawerOpen == true) {
+                Navigator.of(context).pop();
+              }
+              context.go('/profile');
+            },
           ),
         ],
       ),

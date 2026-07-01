@@ -6,6 +6,7 @@ import '../../../../core/theme/colors.dart';
 import '../../domain/entities/message.dart';
 import '../../domain/entities/message_role.dart';
 import 'code_block_builder.dart';
+import 'attachment_widget.dart';
 
 class ChatBubble extends StatelessWidget {
   final Message message;
@@ -176,12 +177,20 @@ class ChatBubble extends StatelessWidget {
 
   Widget _buildContent(BuildContext context, ThemeData theme, bool isUser) {
     if (isUser) {
-      return Text(
-        message.content,
-        style: theme.textTheme.bodyMedium?.copyWith(
-          color: Colors.white,
-          height: 1.4,
-        ),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (message.fileId != null)
+            AttachmentWidget(fileId: message.fileId!, isUser: true),
+          if (message.content.isNotEmpty)
+            Text(
+              message.content,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: Colors.white,
+                height: 1.4,
+              ),
+            ),
+        ],
       );
     }
 
@@ -195,6 +204,8 @@ class ChatBubble extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (message.fileId != null)
+          AttachmentWidget(fileId: message.fileId!, isUser: false),
         if (message.thinkingContent != null &&
             message.thinkingContent!.isNotEmpty)
           _buildThinkingContent(theme, message.thinkingContent!),

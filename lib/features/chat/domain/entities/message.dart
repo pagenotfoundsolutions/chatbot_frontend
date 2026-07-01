@@ -10,6 +10,7 @@ abstract class Message with _$Message {
     required MessageRole role,
     required String content,
     String? thinkingContent,
+    String? fileId,
     required DateTime createdAt,
   }) = _Message;
 }

@@ -9,5 +9,6 @@ abstract class FilesState with _$FilesState {
   const factory FilesState({
     @Default(LoadState.idle()) LoadState<FileEntity> uploadStatus,
     @Default(LoadState.idle()) LoadState<List<FileEntity>> filesStatus,
+    @Default(LoadState.idle()) LoadState<void> deleteStatus,
   }) = _FilesState;
 }

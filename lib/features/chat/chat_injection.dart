@@ -14,7 +14,6 @@ import 'domain/usecases/send_message.dart';
 import 'domain/usecases/stream_message.dart';
 import 'domain/usecases/cancel_message.dart';
 import 'domain/usecases/update_conversation.dart';
-import 'domain/usecases/create_conversation.dart';
 import 'presentation/bloc/chat_bloc.dart';
 import 'presentation/bloc/conversations_bloc.dart';
 

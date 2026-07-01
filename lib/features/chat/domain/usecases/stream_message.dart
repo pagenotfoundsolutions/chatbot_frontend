@@ -17,6 +17,7 @@ class StreamMessageUseCase {
       providerId: params.providerId,
       modelId: params.modelId,
       thinkingEnabled: params.thinkingEnabled,
+      fileId: params.fileId,
       cancelToken: params.cancelToken,
     );
   }
@@ -28,6 +29,7 @@ class StreamMessageParams {
   final String providerId;
   final String modelId;
   final bool thinkingEnabled;
+  final String? fileId;
   final CancelToken? cancelToken;
 
   StreamMessageParams({
@@ -36,6 +38,7 @@ class StreamMessageParams {
     required this.providerId,
     required this.modelId,
     this.thinkingEnabled = false,
+    this.fileId,
     this.cancelToken,
   });
 }

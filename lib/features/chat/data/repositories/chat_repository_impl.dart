@@ -126,11 +126,13 @@ class ChatRepositoryImpl implements ChatRepository {
     required String content,
     required String providerId,
     required String modelId,
+    String? fileId,
   }) async {
     final request = SendMessageRequest(
       content: content,
       providerId: providerId,
       modelId: modelId,
+      fileId: fileId,
     );
     final result = await safeApiCall(() => apiService.sendMessage(conversationId, request));
     return result.fold(
@@ -151,6 +153,7 @@ class ChatRepositoryImpl implements ChatRepository {
     required String providerId,
     required String modelId,
     bool thinkingEnabled = false,
+    String? fileId,
     CancelToken? cancelToken,
   }) async* {
     try {
@@ -159,6 +162,7 @@ class ChatRepositoryImpl implements ChatRepository {
         providerId: providerId,
         modelId: modelId,
         thinkingEnabled: thinkingEnabled,
+        fileId: fileId,
       );
 
       final stream = streamDataSource.streamMessage(conversationId, request, cancelToken: cancelToken);

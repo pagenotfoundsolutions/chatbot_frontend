@@ -10,12 +10,14 @@ class SendMessageParams {
   final String content;
   final String providerId;
   final String modelId;
+  final String? fileId;
 
   SendMessageParams({
     required this.conversationId,
     required this.content,
     required this.providerId,
     required this.modelId,
+    this.fileId,
   });
 }
 
@@ -31,6 +33,7 @@ class SendMessageUseCase implements UseCase<SendMessageResult, SendMessageParams
       content: params.content,
       providerId: params.providerId,
       modelId: params.modelId,
+      fileId: params.fileId,
     );
   }
 }

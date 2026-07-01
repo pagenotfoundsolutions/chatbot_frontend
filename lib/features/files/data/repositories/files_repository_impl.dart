@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/error_handler.dart';
 import '../../../../core/error/failure.dart';
@@ -13,9 +13,10 @@ class FilesRepositoryImpl implements FilesRepository {
   FilesRepositoryImpl({required this.apiClient});
 
   @override
-  Future<Either<Failure, FileEntity>> uploadFile(File file) async {
+  Future<Either<Failure, FileEntity>> uploadFile(String fileName, List<int> bytes) async {
     return safeApiCall(() async {
-      final response = await apiClient.uploadFile(file);
+      final multipartFile = MultipartFile.fromBytes(bytes, filename: fileName);
+      final response = await apiClient.uploadFile(multipartFile);
       if (response.success && response.data != null) {
         return FileMapper.toEntity(response.data!);
       } else {
@@ -38,8 +39,11 @@ class FilesRepositoryImpl implements FilesRepository {
 
   @override
   Future<Either<Failure, void>> deleteFile(String id) async {
-    // Backend API json does not seem to have a delete file endpoint defined.
-    // If needed, we will add it later. For now, return a generic exception or unimplemented.
-    return Left(ServerFailure('Delete file not implemented on backend'));
+    return safeApiCall(() async {
+      final response = await apiClient.deleteFile(id);
+      if (!response.success) {
+        throw Exception(response.message);
+      }
+    });
   }
 }
