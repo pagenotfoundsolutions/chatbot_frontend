@@ -7,7 +7,7 @@ import '../../../files/domain/usecases/upload_file.dart';
 import '../../../files/domain/usecases/delete_file.dart';
 
 class ChatInputBar extends StatefulWidget {
-  final Function(String, PlatformFile?) onSend;
+  final Function(String, String?) onSend;
   final VoidCallback? onCancel;
   final bool isLoading;
 

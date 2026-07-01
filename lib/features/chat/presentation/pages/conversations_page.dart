@@ -5,8 +5,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/colors.dart';
 import '../../../../core/widgets/app_loader.dart';
-import '../../../ai_models/presentation/bloc/ai_providers_bloc.dart';
-import '../../../ai_models/presentation/bloc/ai_providers_event.dart';
 import '../bloc/conversations_bloc.dart';
 import '../bloc/conversations_event.dart';
 import '../bloc/conversations_state.dart';

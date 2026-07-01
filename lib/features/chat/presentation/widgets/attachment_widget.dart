@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screen_responsive/flutter_screen_responsive.dart';
-import '../../../../core/theme/colors.dart';
 import '../../../../core/di/injection.dart';
+import '../../../../core/usecase/usecase.dart';
 import '../../../files/domain/usecases/get_files.dart';
 import '../../../files/domain/entities/file_entity.dart';
 
@@ -31,7 +31,7 @@ class _AttachmentWidgetState extends State<AttachmentWidget> {
 
   Future<void> _fetchFile() async {
     final getFilesUseCase = sl<GetFilesUseCase>();
-    final result = await getFilesUseCase();
+    final result = await getFilesUseCase(NoParams());
     if (mounted) {
       result.fold(
         (failure) {
