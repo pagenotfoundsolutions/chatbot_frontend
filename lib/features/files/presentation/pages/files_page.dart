@@ -2,9 +2,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/theme/colors.dart';
+import '../../../../core/di/injection.dart';
+import '../../../../core/utils/file_saver.dart';
 import '../../../../core/utils/loading_state.dart';
 import '../../../../core/widgets/app_loader.dart';
+import '../../domain/entities/file_entity.dart';
+import '../../domain/usecases/download_file.dart';
 import '../bloc/files_bloc.dart';
 import '../bloc/files_event.dart';
 import '../bloc/files_state.dart';
@@ -24,10 +27,54 @@ class FilesPage extends StatefulWidget {
 }
 
 class _FilesPageState extends State<FilesPage> {
+  final ScrollController _scrollController = ScrollController();
+  final Set<String> _downloadingIds = <String>{};
+
   @override
   void initState() {
     super.initState();
     context.read<FilesBloc>().add(const FilesEvent.fetchFiles());
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    // Trigger a load when within 300px of the bottom.
+    if (position.pixels >= position.maxScrollExtent - 300) {
+      context.read<FilesBloc>().add(const FilesEvent.loadMoreFiles());
+    }
+  }
+
+  Future<void> _downloadFile(FileEntity file) async {
+    if (_downloadingIds.contains(file.id)) return;
+    setState(() => _downloadingIds.add(file.id));
+
+    final result = await sl<DownloadFileUseCase>()(file.filePath);
+
+    if (!mounted) return;
+    setState(() => _downloadingIds.remove(file.id));
+
+    result.fold(
+      (failure) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Download failed: ${failure.message}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      },
+      (bytes) {
+        FileSaver.saveBytes(bytes, file.originalFilename, file.mimeType);
+      },
+    );
   }
 
   Future<void> _uploadFile() async {
@@ -123,19 +170,29 @@ class _FilesPageState extends State<FilesPage> {
             return state.filesStatus.maybeWhen(
               idle: (_) => const SizedBox.shrink(),
               loading: (_) => const Center(child: AppCircleLoader()),
-              loaded: (files) {
+              loaded: (_) {
+                final files = state.files;
                 if (files.isEmpty) {
                   return _buildEmptyState(theme);
                 }
+                final hasMore = state.currentPage < state.totalPages;
                 return RefreshIndicator(
                   onRefresh: () async {
                     context.read<FilesBloc>().add(const FilesEvent.fetchFiles());
                   },
                   child: ListView.builder(
+                    controller: _scrollController,
                     padding: const EdgeInsets.all(16.0),
-                    itemCount: files.length,
+                    itemCount: files.length + (hasMore ? 1 : 0),
                     itemBuilder: (context, index) {
+                      if (index >= files.length) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16.0),
+                          child: Center(child: AppCircleLoader()),
+                        );
+                      }
                       final file = files[index];
+                      final isDownloading = _downloadingIds.contains(file.id);
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12.0),
                         elevation: 0,
@@ -164,35 +221,49 @@ class _FilesPageState extends State<FilesPage> {
                               color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
                           ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete_outline, color: Colors.red),
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Delete File'),
-                                  content: const Text('Are you sure you want to delete this file?'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: const Text('Cancel'),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                tooltip: 'Download',
+                                icon: isDownloading
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      )
+                                    : Icon(Icons.download_outlined, color: theme.colorScheme.primary),
+                                onPressed: isDownloading ? null : () => _downloadFile(file),
+                              ),
+                              IconButton(
+                                tooltip: 'Delete',
+                                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (dialogContext) => AlertDialog(
+                                      title: const Text('Delete File'),
+                                      content: const Text('Are you sure you want to delete this file?'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(dialogContext),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.error),
+                                          onPressed: () {
+                                            context.read<FilesBloc>().add(FilesEvent.deleteFile(file.id));
+                                            Navigator.pop(dialogContext);
+                                          },
+                                          child: const Text('Delete', style: TextStyle(color: Colors.white)),
+                                        ),
+                                      ],
                                     ),
-                                    ElevatedButton(
-                                      style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.error),
-                                      onPressed: () {
-                                        context.read<FilesBloc>().add(FilesEvent.deleteFile(file.id));
-                                        Navigator.pop(context);
-                                      },
-                                      child: const Text('Delete', style: TextStyle(color: Colors.white)),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
+                                  );
+                                },
+                              ),
+                            ],
                           ),
-                          onTap: () {
-                            // View details or open
-                          },
                         ),
                       );
                     },

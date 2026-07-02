@@ -1,5 +1,4 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/usecase/usecase.dart';
 import '../../../../core/utils/loading_state.dart';
 import '../../domain/usecases/get_files.dart';
 import '../../domain/usecases/upload_file.dart';
@@ -12,6 +11,8 @@ class FilesBloc extends Bloc<FilesEvent, FilesState> {
   final GetFilesUseCase getFilesUseCase;
   final DeleteFileUseCase deleteFileUseCase;
 
+  static const int _pageSize = 20;
+
   FilesBloc({
     required this.uploadFileUseCase,
     required this.getFilesUseCase,
@@ -19,6 +20,7 @@ class FilesBloc extends Bloc<FilesEvent, FilesState> {
   }) : super(const FilesState()) {
     on<UploadFileEvent>(_onUploadFile);
     on<FetchFilesEvent>(_onFetchFiles);
+    on<LoadMoreFilesEvent>(_onLoadMoreFiles);
     on<DeleteFileEvent>(_onDeleteFile);
   }
 
@@ -48,13 +50,47 @@ class FilesBloc extends Bloc<FilesEvent, FilesState> {
   ) async {
     emit(state.copyWith(filesStatus: const LoadState.loading()));
 
-    final result = await getFilesUseCase(NoParams());
+    final result = await getFilesUseCase(GetFilesParams(page: 1, size: _pageSize));
 
     result.fold(
       (failure) => emit(
         state.copyWith(filesStatus: LoadState.error(failure.message)),
       ),
-      (files) => emit(state.copyWith(filesStatus: LoadState.loaded(files))),
+      (page) => emit(
+        state.copyWith(
+          filesStatus: LoadState.loaded(page.items),
+          files: page.items,
+          currentPage: page.page,
+          totalPages: page.pages,
+          isLoadingMore: false,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onLoadMoreFiles(
+    LoadMoreFilesEvent event,
+    Emitter<FilesState> emit,
+  ) async {
+    // Nothing more to load, or a load is already in flight.
+    if (state.isLoadingMore || state.currentPage >= state.totalPages) return;
+
+    emit(state.copyWith(isLoadingMore: true));
+
+    final nextPage = state.currentPage + 1;
+    final result = await getFilesUseCase(GetFilesParams(page: nextPage, size: _pageSize));
+
+    result.fold(
+      (failure) => emit(state.copyWith(isLoadingMore: false)),
+      (page) => emit(
+        state.copyWith(
+          files: [...state.files, ...page.items],
+          filesStatus: LoadState.loaded([...state.files, ...page.items]),
+          currentPage: page.page,
+          totalPages: page.pages,
+          isLoadingMore: false,
+        ),
+      ),
     );
   }
 

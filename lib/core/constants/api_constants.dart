@@ -25,6 +25,7 @@ class ApiConstants {
   // File Endpoints
   static const String uploadFile = '/files/upload';
   static const String listFiles = '/files';
+  static const String getFileDetail = '/files/detail/{file_id}';
   static const String deleteFile = '/files/{file_id}';
 
   // User Endpoints

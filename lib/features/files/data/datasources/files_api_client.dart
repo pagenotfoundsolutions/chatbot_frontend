@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 import '../../../../core/network/resp.dart';
+import '../../../../core/network/page_resp.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../models/file_model.dart';
 
@@ -17,7 +18,13 @@ abstract class FilesApiClient {
   );
 
   @GET(ApiConstants.listFiles)
-  Future<Resp<List<FileModel>>> getFiles();
+  Future<Resp<PageResp<FileModel>>> getFiles({
+    @Query('page') int page = 1,
+    @Query('size') int size = 50,
+  });
+
+  @GET(ApiConstants.getFileDetail)
+  Future<Resp<FileModel>> getFileDetail(@Path('file_id') String fileId);
 
   @DELETE(ApiConstants.deleteFile)
   Future<Resp<void>> deleteFile(@Path('file_id') String fileId);

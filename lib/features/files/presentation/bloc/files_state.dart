@@ -10,5 +10,9 @@ abstract class FilesState with _$FilesState {
     @Default(LoadState.idle()) LoadState<FileEntity> uploadStatus,
     @Default(LoadState.idle()) LoadState<List<FileEntity>> filesStatus,
     @Default(LoadState.idle()) LoadState<void> deleteStatus,
+    @Default(<FileEntity>[]) List<FileEntity> files,
+    @Default(1) int currentPage,
+    @Default(1) int totalPages,
+    @Default(false) bool isLoadingMore,
   }) = _FilesState;
 }

@@ -22,21 +22,53 @@ class ChatInputBar extends StatefulWidget {
   State<ChatInputBar> createState() => _ChatInputBarState();
 }
 
+class ChatInputState {
+  final PlatformFile? selectedFile;
+  final String? uploadedFileId;
+  final bool isUploadingFile;
+  final bool isDeletingFile;
+
+  const ChatInputState({
+    this.selectedFile,
+    this.uploadedFileId,
+    this.isUploadingFile = false,
+    this.isDeletingFile = false,
+  });
+
+  ChatInputState copyWith({
+    PlatformFile? selectedFile,
+    String? uploadedFileId,
+    bool? isUploadingFile,
+    bool? isDeletingFile,
+    bool clearSelectedFile = false,
+    bool clearUploadedFileId = false,
+  }) {
+    return ChatInputState(
+      selectedFile: clearSelectedFile ? null : (selectedFile ?? this.selectedFile),
+      uploadedFileId: clearUploadedFileId ? null : (uploadedFileId ?? this.uploadedFileId),
+      isUploadingFile: isUploadingFile ?? this.isUploadingFile,
+      isDeletingFile: isDeletingFile ?? this.isDeletingFile,
+    );
+  }
+}
+
 class _ChatInputBarState extends State<ChatInputBar> {
   final TextEditingController _controller = TextEditingController();
-  PlatformFile? _selectedFile;
-  String? _uploadedFileId;
-  bool _isUploadingFile = false;
+  late final ValueNotifier<ChatInputState> _stateNotifier;
+
+  @override
+  void initState() {
+    super.initState();
+    _stateNotifier = ValueNotifier(const ChatInputState());
+  }
 
   void _handleSend() {
     final text = _controller.text.trim();
-    if ((text.isNotEmpty || _uploadedFileId != null) && !widget.isLoading && !_isUploadingFile) {
-      widget.onSend(text, _uploadedFileId); // Note: Need to update the callback signature!
+    final state = _stateNotifier.value;
+    if ((text.isNotEmpty || state.uploadedFileId != null) && !widget.isLoading && !state.isUploadingFile && !state.isDeletingFile) {
+      widget.onSend(text, state.uploadedFileId); // Note: Need to update the callback signature!
       _controller.clear();
-      setState(() {
-        _selectedFile = null;
-        _uploadedFileId = null;
-      });
+      _stateNotifier.value = state.copyWith(clearSelectedFile: true, clearUploadedFileId: true);
     }
   }
 
@@ -49,11 +81,12 @@ class _ChatInputBarState extends State<ChatInputBar> {
       );
       if (result != null && result.files.isNotEmpty) {
         final file = result.files.first;
-        setState(() {
-          _selectedFile = file;
-          _isUploadingFile = true;
-          _uploadedFileId = null;
-        });
+        _stateNotifier.value = _stateNotifier.value.copyWith(
+          selectedFile: file,
+          isUploadingFile: true,
+          isDeletingFile: false,
+          clearUploadedFileId: true,
+        );
 
         // Upload the file
         final uploadUseCase = sl<UploadFileUseCase>();
@@ -62,28 +95,28 @@ class _ChatInputBarState extends State<ChatInputBar> {
         if (!mounted) return;
         response.fold(
           (failure) {
-            setState(() {
-              _isUploadingFile = false;
-              _selectedFile = null;
-            });
+            _stateNotifier.value = _stateNotifier.value.copyWith(
+              isUploadingFile: false,
+              clearSelectedFile: true,
+            );
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Failed to upload file: ${failure.message}'), backgroundColor: Theme.of(context).colorScheme.error),
             );
           },
           (fileEntity) {
-            setState(() {
-              _isUploadingFile = false;
-              _uploadedFileId = fileEntity.id;
-            });
+            _stateNotifier.value = _stateNotifier.value.copyWith(
+              isUploadingFile: false,
+              uploadedFileId: fileEntity.id,
+            );
           },
         );
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _isUploadingFile = false;
-          _selectedFile = null;
-        });
+        _stateNotifier.value = _stateNotifier.value.copyWith(
+          isUploadingFile: false,
+          clearSelectedFile: true,
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to pick file: $e')),
         );
@@ -92,20 +125,42 @@ class _ChatInputBarState extends State<ChatInputBar> {
   }
 
   Future<void> _deletePickedFile() async {
-    if (_uploadedFileId != null) {
+    final uploadedId = _stateNotifier.value.uploadedFileId;
+    if (uploadedId != null) {
+      _stateNotifier.value = _stateNotifier.value.copyWith(isDeletingFile: true);
+      
       final deleteUseCase = sl<DeleteFileUseCase>();
-      // We don't await/block the UI on delete, just fire and forget or handle silently
-      deleteUseCase(_uploadedFileId!);
+      final response = await deleteUseCase(uploadedId);
+      
+      if (!mounted) return;
+      response.fold(
+        (failure) {
+          _stateNotifier.value = _stateNotifier.value.copyWith(isDeletingFile: false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to delete file: ${failure.message}'), backgroundColor: Theme.of(context).colorScheme.error),
+          );
+        },
+        (_) {
+          _stateNotifier.value = _stateNotifier.value.copyWith(
+            clearSelectedFile: true,
+            clearUploadedFileId: true,
+            isDeletingFile: false,
+          );
+        }
+      );
+    } else {
+      _stateNotifier.value = _stateNotifier.value.copyWith(
+        clearSelectedFile: true,
+        clearUploadedFileId: true,
+        isUploadingFile: false,
+        isDeletingFile: false,
+      );
     }
-    setState(() {
-      _selectedFile = null;
-      _uploadedFileId = null;
-      _isUploadingFile = false;
-    });
   }
 
   @override
   void dispose() {
+    _stateNotifier.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -150,55 +205,65 @@ class _ChatInputBarState extends State<ChatInputBar> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    if (_selectedFile != null)
-                      Padding(
-                        padding: EdgeInsets.only(left: 12.w, top: 12.h, right: 12.w),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Container(
-                                width: 50.r,
-                                height: 50.r,
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.primaryContainer.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(8.r),
-                                  border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
-                                ),
-                                child: _isUploadingFile 
-                                    ? const Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)))
-                                    : Icon(Icons.insert_drive_file, color: theme.colorScheme.primary, size: 28),
-                              ),
-                              Positioned(
-                                top: -8,
-                                right: -8,
-                                child: GestureDetector(
-                                  onTap: _deletePickedFile,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(2),
-                                    decoration: BoxDecoration(
-                                      color: theme.colorScheme.error,
-                                      shape: BoxShape.circle,
+                    ValueListenableBuilder<ChatInputState>(
+                      valueListenable: _stateNotifier,
+                      builder: (context, state, child) {
+                        if (state.selectedFile == null) return const SizedBox.shrink();
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.only(left: 12.w, top: 12.h, right: 12.w),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    Container(
+                                      width: 50.r,
+                                      height: 50.r,
+                                      decoration: BoxDecoration(
+                                        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(8.r),
+                                        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
+                                      ),
+                                      child: (state.isUploadingFile || state.isDeletingFile)
+                                          ? const Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)))
+                                          : Icon(Icons.insert_drive_file, color: theme.colorScheme.primary, size: 28),
                                     ),
-                                    child: const Icon(Icons.close, size: 14, color: Colors.white),
-                                  ),
+                                    if (!state.isUploadingFile && !state.isDeletingFile)
+                                      Positioned(
+                                        top: -8,
+                                        right: -8,
+                                        child: GestureDetector(
+                                          onTap: _deletePickedFile,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(2),
+                                            decoration: BoxDecoration(
+                                              color: theme.colorScheme.error,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(Icons.close, size: 14, color: Colors.white),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      if (_selectedFile != null)
-                        Padding(
-                          padding: EdgeInsets.only(left: 12.w, top: 4.h),
-                          child: Text(
-                            _selectedFile!.name,
-                            style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.only(left: 12.w, top: 4.h),
+                              child: Text(
+                                state.selectedFile!.name,
+                                style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
@@ -241,40 +306,45 @@ class _ChatInputBarState extends State<ChatInputBar> {
               ),
             ),
             SizedBox(width: 12.w),
-            GestureDetector(
-              onTap: widget.isLoading ? widget.onCancel : (_isUploadingFile ? null : _handleSend),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                height: 48.r,
-                width: 48.r,
-                margin: EdgeInsets.only(bottom: 2.h),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: widget.isLoading 
-                      ? [Colors.redAccent, Colors.redAccent.withValues(alpha: 0.8)]
-                      : _isUploadingFile
-                          ? [Colors.grey, Colors.grey.shade400]
-                          : [AppColors.primaryAccent, AppColors.primaryAccent.withValues(alpha: 0.8)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  shape: BoxShape.rectangle,
-                  borderRadius: BorderRadius.circular(widget.isLoading ? 12.r : 50.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (widget.isLoading ? Colors.redAccent : (_isUploadingFile ? Colors.grey : AppColors.primaryAccent)).withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      spreadRadius: 1,
-                      offset: const Offset(0, 4),
+            ValueListenableBuilder<ChatInputState>(
+              valueListenable: _stateNotifier,
+              builder: (context, state, child) {
+                return GestureDetector(
+                  onTap: widget.isLoading ? widget.onCancel : ((state.isUploadingFile || state.isDeletingFile) ? null : _handleSend),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    height: 48.r,
+                    width: 48.r,
+                    margin: EdgeInsets.only(bottom: 2.h),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: widget.isLoading 
+                          ? [Colors.redAccent, Colors.redAccent.withValues(alpha: 0.8)]
+                          : (state.isUploadingFile || state.isDeletingFile)
+                              ? [Colors.grey, Colors.grey.shade400]
+                              : [AppColors.primaryAccent, AppColors.primaryAccent.withValues(alpha: 0.8)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.rectangle,
+                      borderRadius: BorderRadius.circular(widget.isLoading ? 12.r : 50.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (widget.isLoading ? Colors.redAccent : ((state.isUploadingFile || state.isDeletingFile) ? Colors.grey : AppColors.primaryAccent)).withValues(alpha: 0.3),
+                          blurRadius: 12,
+                          spreadRadius: 1,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Icon(
-                  widget.isLoading ? Icons.stop_rounded : Icons.send_rounded,
-                  color: Colors.white,
-                  size: 20.r,
-                ),
-              ),
+                    child: Icon(
+                      widget.isLoading ? Icons.stop_rounded : Icons.send_rounded,
+                      color: Colors.white,
+                      size: 20.r,
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         ),

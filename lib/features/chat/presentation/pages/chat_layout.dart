@@ -19,25 +19,15 @@ class ChatLayout extends StatefulWidget {
 }
 
 class _ChatLayoutState extends State<ChatLayout> {
-  String? _activeConversationId;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
-    _activeConversationId = widget.conversationId;
     
     final aiState = context.read<AiProvidersBloc>().state;
     if (aiState.providers.isEmpty && !aiState.isLoading) {
       context.read<AiProvidersBloc>().add(const AiProvidersEvent.fetchRequested());
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant ChatLayout oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.conversationId != widget.conversationId) {
-      _activeConversationId = widget.conversationId;
     }
   }
 
@@ -54,7 +44,7 @@ class _ChatLayoutState extends State<ChatLayout> {
             child: SafeArea(
               child: ConversationsPage(
                 isSidebar: true,
-                activeConversationId: _activeConversationId,
+                activeConversationId: widget.conversationId,
                 onConversationTap: (id) {
                   Navigator.of(context).pop(); // Close drawer
                   context.go('/chat/$id');
@@ -62,7 +52,7 @@ class _ChatLayoutState extends State<ChatLayout> {
               ),
             ),
           ),
-          body: _activeConversationId == null
+          body: widget.conversationId == null
               ? ChatPage(
                   key: const ValueKey('new_chat'),
                   conversationId: null,
@@ -71,8 +61,8 @@ class _ChatLayoutState extends State<ChatLayout> {
                   onDrawerTap: () => _scaffoldKey.currentState?.openDrawer(),
                 )
               : ChatPage(
-                  key: ValueKey(_activeConversationId),
-                  conversationId: _activeConversationId!,
+                  key: ValueKey(widget.conversationId),
+                  conversationId: widget.conversationId!,
                   showBackButton: false,
                   showDrawerButton: true,
                   onDrawerTap: () => _scaffoldKey.currentState?.openDrawer(),
@@ -92,26 +82,23 @@ class _ChatLayoutState extends State<ChatLayout> {
             width: 320.w, // Fixed sidebar width
             child: ConversationsPage(
               isSidebar: true,
-              activeConversationId: _activeConversationId,
+              activeConversationId: widget.conversationId,
               onConversationTap: (id) {
-                setState(() {
-                  _activeConversationId = id;
-                });
                 context.go('/chat/$id');
               },
             ),
           ),
           const VerticalDivider(width: 1, thickness: 1),
           Expanded(
-            child: _activeConversationId == null
+            child: widget.conversationId == null
                 ? const ChatPage(
                     key: ValueKey('new_chat'),
                     conversationId: null,
                     showBackButton: false,
                   )
                 : ChatPage(
-                    key: ValueKey(_activeConversationId), // Force rebuild on id change
-                    conversationId: _activeConversationId!,
+                    key: ValueKey(widget.conversationId), // Force rebuild on id change
+                    conversationId: widget.conversationId!,
                     showBackButton: false,
                   ),
           ),
